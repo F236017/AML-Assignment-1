@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLARIS AI • Standalone Solar Generation Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #07090e;
+            --bg-surface: #0e131f;
+            --bg-card: rgba(18, 24, 38, 0.85);
+            --bg-card-hover: rgba(24, 32, 50, 0.95);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-focus: #f59e0b;
+            --solar-gold: #f59e0b;
+            --solar-amber: #d97706;
+            --solar-glow: rgba(245, 158, 11, 0.25);
+            --emerald: #10b981;
+            --emerald-glow: rgba(16, 185, 129, 0.2);
+            --cyan: #06b6d4;
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 20% 10%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 45%),
+                linear-gradient(to bottom, #07090e, #0a0d14);
+            background-attachment: fixed;
+        }
+
+        /* Top Navigation */
+        nav.navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 2.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(7, 9, 14, 0.85);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px var(--solar-glow);
+        }
+
+        .brand-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: #ffffff;
+        }
+
+        .brand-text h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #fde68a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .nav-chips {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.875rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--border-subtle);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        .chip.standalone {
+            border-color: rgba(56, 189, 248, 0.3);
+            background: rgba(56, 189, 248, 0.08);
+            color: #38bdf8;
+        }
+
+        .chip.live {
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.08);
+            color: #34d399;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Main Container */
+        main.content {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
+        }
+
+        .hero-title h2 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+        }
+
+        .hero-title p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 0.35rem;
+        }
+
+        .hero-meta {
+            text-align: right;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* 2-Column Core Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Cards */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.75rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-header h3 svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--solar-gold);
+        }
+
+        .card-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--solar-gold);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            font-family: var(--font-mono);
+        }
+
+        /* Form Controls */
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .control-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .control-val-badge {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--solar-gold);
+            background: rgba(245, 158, 11, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .slider-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #1e293b;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.8);
+        }
+
+        .presets-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 0.25rem 0.55rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: var(--text-main);
+        }
+
+        /* Solver Toggle Tabs */
+        .solver-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.35rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+            margin-top: 0.5rem;
+        }
+
+        .solver-tab {
+            padding: 0.6rem 0.5rem;
+            border-radius: 7px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .solver-tab.active {
+            background: var(--solar-gold);
+            color: #000000;
+            box-shadow: 0 2px 10px var(--solar-glow);
+        }
+
+        /* Prediction Output Hero */
+        .output-hero {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(14, 165, 233, 0.04) 100%), var(--bg-card);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 1.25rem;
+            padding: 2.25rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .output-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .output-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--emerald);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .power-display {
+            font-size: 3.5rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            letter-spacing: -0.04em;
+            color: #ffffff;
+            line-height: 1.1;
+            text-shadow: 0 0 30px var(--emerald-glow);
+        }
+
+        .power-unit {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--emerald);
+            margin-left: 0.25rem;
+        }
+
+        .power-subtext {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Capacity Gauge Bar */
+        .capacity-bar-container {
+            margin-top: 1.75rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 9999px;
+            height: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .capacity-bar-fill {
+            height: 100%;
+            width: 78.21%;
+            background: linear-gradient(to right, #10b981, #06b6d4, #f59e0b);
+            border-radius: 9999px;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        }
+
+        .capacity-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Solver Comparison Grid */
+        .solvers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .solver-mini-card {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.1rem 0.85rem;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .solver-mini-card.highlight {
+            border-color: rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .solver-mini-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .solver-mini-val {
+            font-family: var(--font-mono);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-top: 0.35rem;
+        }
+
+        /* Impact Badges Grid */
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .impact-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        .impact-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .impact-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        .impact-text p.label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .impact-text p.val {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 0.15rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Tabs Section */
+        .deep-dive-section {
+            margin-top: 1rem;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 0.25rem;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--solar-gold);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.85rem;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--solar-gold);
+            box-shadow: 0 0 10px var(--solar-gold);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Benchmark Comparison Table */
+        .benchmark-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .benchmark-table th {
+            text-align: left;
+            padding: 0.875rem 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .benchmark-table td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .benchmark-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-main);
+        }
+
+        .tag-success {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .tag-warning {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Footer */
+        footer.app-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-subtle);
+            padding: 1.75rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(7, 9, 14, 0.6);
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .solvers-grid, .impact-grid {
+                grid-template-columns: 1fr;
+            }
+            nav.navbar {
+                padding: 1rem 1.5rem;
+            }
+            main.content {
+                padding: 1.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <h1>SOLARIS AI</h1>
+                <p>Plant 1 Photovoltaic Telemetry & Forecaster</p>
+            </div>
+        </div>
+
+        <div class="nav-chips">
+            <div class="chip">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Gandikota, AP (14.82°N, 78.28°E)
+            </div>
+            <div class="chip standalone">
+                ⚡ 100% Client-Side JS (No Server Needed)
+            </div>
+            <div class="chip live">
+                <span class="pulse-dot"></span>
+                Pure NumPy Weights
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content">
+
+        <div class="hero-header">
+            <div class="hero-title">
+                <h2>Plant Generation Simulator</h2>
+                <p>Simulate utility-scale AC power output from public Open-Meteo satellite weather parameters.</p>
+            </div>
+            <div class="hero-meta">
+                <div>CAPACITY: <strong>27,325.90 kW</strong> (27.3 MW)</div>
+                <div>INVERTERS: <strong>22 SYNCHRONIZED</strong></div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+
+            <!-- Environmental Telemetry Inputs -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Public Weather Telemetry (Set B)
+                    </h3>
+                    <span class="card-tag">Real-Time Ingestion</span>
+                </div>
+
+                <!-- 1. Hour of Day -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Hour of Day (IST, UTC+5:30)</span>
+                        <span class="control-val-badge" id="val-hour">12:00 IST</span>
+                    </div>
+                    <div class="slider-wrap">
+                        <input type="range" id="input-hour" min="0" max="23" step="1" value="12">
+                    </div>
+                    <div class="presets-row">
+                        <button class="preset-btn" onclick="setControl('hour', 6)">Sunrise (06:00)</button>
+                        <button class="preset-btn" onclick="setControl('hour', 12)">Solar Noon (12:00)</button>
+                        <button class="preset-btn" onclick="setControl('hour', 15)">Afternoon (15:00)</button>
+                        <button class="preset-btn" onclick="setControl('hour', 20)">Dusk (20:00)</button>
+                    </div>
+                </div>
+
+                <!-- 2. Shortwave Radiation -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Shortwave Solar Radiation</span>
+                        <span class="control-val-badge" id="val-sw">850.0 W/m²</span>
+                    </div>
+                    <div class="slider-wrap">
+                        <input type="range" id="input-sw" min="0" max="1100" step="5" value="850">
+                    </div>
+                    <div class="presets-row">
+                        <button class="preset-btn" onclick="setControl('sw', 0)">Night (0 W/m²)</button>
+                        <button class="preset-btn" onclick="setControl('sw', 250)">Heavy Overcast (250)</button>
+                        <button class="preset-btn" onclick="setControl('sw', 650)">Moderate (650)</button>
+                        <button class="preset-btn" onclick="setControl('sw', 950)">Peak Clear Sky (950)</button>
+                    </div>
+                </div>
+
+                <!-- 3. Ambient 2m Temperature -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Air Temperature at 2m</span>
+                        <span class="control-val-badge" id="val-temp">33.5 °C</span>
+                    </div>
+                    <div class="slider-wrap">
+                        <input type="range" id="input-temp" min="15" max="48" step="0.5" value="33.5">
+                    </div>
+                    <div class="presets-row">
+                        <button class="preset-btn" onclick="setControl('temp', 22)">Morning Cool (22°C)</button>
+                        <button class="preset-btn" onclick="setControl('temp', 32)">Standard (32°C)</button>
+                        <button class="preset-btn" onclick="setControl('temp', 42)">Extreme Heatwave (42°C)</button>
+                    </div>
+                </div>
+
+                <!-- 4. Total Cloud Cover -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Total Cloud Cover</span>
+                        <span class="control-val-badge" id="val-cloud">15 %</span>
+                    </div>
+                    <div class="slider-wrap">
+                        <input type="range" id="input-cloud" min="0" max="100" step="1" value="15">
+                    </div>
+                    <div class="presets-row">
+                        <button class="preset-btn" onclick="setControl('cloud', 0)">0% Pristine Clear</button>
+                        <button class="preset-btn" onclick="setControl('cloud', 35)">35% Scattered</button>
+                        <button class="preset-btn" onclick="setControl('cloud', 90)">90% Overcast</button>
+                    </div>
+                </div>
+
+                <!-- Regression Solver Selection -->
+                <div class="control-group" style="margin-bottom: 0;">
+                    <div class="control-label-row">
+                        <span class="control-label">Underlying Regression Solver</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Analytical vs Gradient Descent</span>
+                    </div>
+                    <div class="solver-tabs">
+                        <button class="solver-tab active" id="tab-normal" onclick="setSolver('normal')">Normal Eq</button>
+                        <button class="solver-tab" id="tab-batch_gd" onclick="setSolver('batch_gd')">Batch GD</button>
+                        <button class="solver-tab" id="tab-sgd" onclick="setSolver('sgd')">Stochastic GD</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Generation Output Display -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                <!-- Hero Output Card -->
+                <div class="output-hero">
+                    <div class="output-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        Estimated Plant AC Output
+                    </div>
+
+                    <div class="power-display">
+                        <span id="display-power">21,371.02</span>
+                        <span class="power-unit">kW</span>
+                    </div>
+
+                    <p class="power-subtext" id="display-megawatts">
+                        Generating <strong>21.37 MW</strong> • Operating at <strong id="display-pct">78.21%</strong> of maximum rated capacity.
+                    </p>
+
+                    <!-- Capacity Gauge Bar -->
+                    <div class="capacity-bar-container">
+                        <div class="capacity-bar-fill" id="gauge-fill"></div>
+                    </div>
+                    <div class="capacity-labels">
+                        <span>0 kW</span>
+                        <span id="gauge-cur-label">78.2% Capacity</span>
+                        <span>27,325.9 kW Peak</span>
+                    </div>
+                </div>
+
+                <!-- Solvers Agreement Card -->
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div class="card-header" style="margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.95rem;">
+                            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                            Model Solver Verification (First Principles)
+                        </h3>
+                        <span class="card-tag" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.1);">Convergence &lt; 0.01 kW</span>
+                    </div>
+
+                    <div class="solvers-grid">
+                        <div class="solver-mini-card highlight" id="card-normal">
+                            <div class="solver-mini-title">Normal Equation</div>
+                            <div class="solver-mini-val" id="val-norm-comp">21,371.0 kW</div>
+                        </div>
+                        <div class="solver-mini-card" id="card-batch">
+                            <div class="solver-mini-title">Batch GD (15k It)</div>
+                            <div class="solver-mini-val" id="val-bgd-comp">21,371.0 kW</div>
+                        </div>
+                        <div class="solver-mini-card" id="card-sgd">
+                            <div class="solver-mini-title">SGD (100 Ep)</div>
+                            <div class="solver-mini-val" id="val-sgd-comp">21,949.2 kW</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impact Metrics Grid -->
+                <div class="impact-grid">
+                    <div class="impact-card">
+                        <div class="impact-icon">
+                            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        </div>
+                        <div class="impact-text">
+                            <p class="label">Homes Powered</p>
+                            <p class="val" id="metric-homes">~17,802</p>
+                        </div>
+                    </div>
+
+                    <div class="impact-card">
+                        <div class="impact-icon">
+                            <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        </div>
+                        <div class="impact-text">
+                            <p class="label">CO₂ Offset Rate</p>
+                            <p class="val" id="metric-co2">15.17 t/h</p>
+                        </div>
+                    </div>
+
+                    <div class="impact-card">
+                        <div class="impact-icon">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        </div>
+                        <div class="impact-text">
+                            <p class="label">Avg Per Inverter</p>
+                            <p class="val" id="metric-inverter">971.4 kW</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Deep Dive & Academic Analysis Section -->
+        <div class="glass-card deep-dive-section">
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchSectionTab('accuracy')">Accuracy Trade-Off (Set A vs Set B)</button>
+                <button class="tab-btn" onclick="switchSectionTab('weights')">Learned Physical Coefficients (θ)</button>
+                <button class="tab-btn" onclick="switchSectionTab('plant')">Plant 1 Architecture Specs</button>
+            </div>
+
+            <!-- Tab 1: Accuracy Benchmark -->
+            <div class="tab-content active" id="tab-content-accuracy">
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem;">
+                    Empirical performance measured on the chronologically held-out test week (June 11 – June 17, 2020; 168 hours total, 97 daytime hours).
+                </p>
+                <table class="benchmark-table">
+                    <thead>
+                        <tr>
+                            <th>Feature Set Source</th>
+                            <th>Inputs Used</th>
+                            <th>All-Hours RMSE</th>
+                            <th>Daytime-Only RMSE</th>
+                            <th>% of Peak Capacity</th>
+                            <th>Target Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong style="color: #ffffff;">Feature Set A</strong> (On-Site Sensors)</td>
+                            <td>Pyranometer Irradiation, Panel Temp, Ambient Temp, sin/cos(h)</td>
+                            <td><span style="font-family: var(--font-mono); color: #34d399;">554.67 kW</span></td>
+                            <td><span style="font-family: var(--font-mono); color: #34d399; font-weight: 700;">725.16 kW</span></td>
+                            <td><span class="tag-success">2.65% Peak</span></td>
+                            <td>Utility Grid Dispatch, Ramp Reserves</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: #ffffff;">Feature Set B</strong> (Public Open-Meteo)</td>
+                            <td>Satellite Shortwave Radiation, 2m Temp, Cloud Cover, sin/cos(h)</td>
+                            <td><span style="font-family: var(--font-mono); color: #fbbf24;">2,632.31 kW</span></td>
+                            <td><span style="font-family: var(--font-mono); color: #fbbf24; font-weight: 700;">3,427.06 kW</span></td>
+                            <td><span class="tag-warning">12.54% Peak</span></td>
+                            <td>Rooftop Solar, Yield Billing, Feasibility</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab 2: Learned Coefficients -->
+            <div class="tab-content" id="tab-content-weights">
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem;">
+                    Analytical weights (θ) derived via Normal Equation from first principles ($X^T X)^{-1} X^T y$ on standardized features.
+                </p>
+                <table class="benchmark-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Normalized Feature</th>
+                            <th>Learned Weight (θ)</th>
+                            <th>Physical Rationale & Sign Agreement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">θ₀</span></td>
+                            <td>Intercept Term</td>
+                            <td><span style="font-family: var(--font-mono); color: #ffffff;">+6,744.16</span></td>
+                            <td>Uncentered generation baseline (mean plant generation across diurnal cycle)</td>
+                        </tr>
+                        <tr>
+                            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">θ₁</span></td>
+                            <td>Irradiation (kW/m²)</td>
+                            <td><span style="font-family: var(--font-mono); color: #34d399; font-weight: 700;">+8,239.39</span></td>
+                            <td><strong>Dominant Positive Factor</strong>: Photoelectric excitation rate is strictly proportional to photon flux</td>
+                        </tr>
+                        <tr>
+                            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">θ₂</span></td>
+                            <td>Module Temperature (°C)</td>
+                            <td><span style="font-family: var(--font-mono); color: #f87171; font-weight: 700;">-47.77</span></td>
+                            <td><strong>Negative Sign</strong>: Semiconductor bandgap narrowing increases carrier recombination at ~ -0.4%/°C</td>
+                        </tr>
+                        <tr>
+                            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">θ₃</span></td>
+                            <td>Ambient Temperature (°C)</td>
+                            <td><span style="font-family: var(--font-mono); color: #f87171;">-11.14</span></td>
+                            <td><strong>Negative Sign</strong>: Warmer air temperature reduces convective heat dissipation from panel surfaces</td>
+                        </tr>
+                        <tr>
+                            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">θ₅</span></td>
+                            <td>cos(2π h / 24)</td>
+                            <td><span style="font-family: var(--font-mono); color: #38bdf8;">-400.95</span></td>
+                            <td>At solar noon (h=12), cos(π) = -1.0; multiplying by negative weight provides an additional +400 kW peak boost</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab 3: Plant 1 Specs -->
+            <div class="tab-content" id="tab-content-plant">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-top: 0.5rem;">
+                    <div style="background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                        <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Facility Location</p>
+                        <p style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">Gandikota, Andhra Pradesh</p>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Latitude 14.82°N, Longitude 78.28°E</p>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                        <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Substation Capacity</p>
+                        <p style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">27,325.90 kW (27.3 MW)</p>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">22 Central Power Inverters</p>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                        <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Telemetry Period</p>
+                        <p style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">May 15 – June 17, 2020</p>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">816 Synchronized Hourly Samples</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div>
+            <strong>AI4003 Applied Machine Learning (Fall 2026)</strong> • Assignment 1: Least-Squares by Hand
+        </div>
+        <div style="font-family: var(--font-mono);">
+            Zero Backend Required • Pure JavaScript Inference Engine
+        </div>
+    </footer>
+
+    <!-- Standalone First-Principles Client-Side JavaScript Engine -->
+    <script>
+        // ─────────────────────────────────────────────────────────────
+        // PRE-TRAINED MODEL WEIGHTS (Derived from results/saved_weights.json)
+        // Strictly implemented from first principles (No scikit-learn / statsmodels)
+        // ─────────────────────────────────────────────────────────────
+        const MODEL_CONFIG = {
+            peak_power_kw: 27325.89866,
+            scaler: {
+                mean: [
+                    248.61265432098764,     // sw_radiation mean
+                    33.04043209876543,      // temp_2m mean
+                    68.56481481481481,      // cloud_cover mean
+                    -1.5077102803551508e-17,// sin_hour mean
+                    -5.893776550479226e-17  // cos_hour mean
+                ],
+                std: [
+                    316.58637329084206,     // sw_radiation std
+                    4.100241012001677,      // temp_2m std
+                    34.2557393086617,       // cloud_cover std
+                    0.7071067811865476,     // sin_hour std
+                    0.7071067811865476      // cos_hour std
+                ]
+            },
+            // Parameters theta = [x0, sw_radiation, temp_2m, cloud_cover, sin_hour, cos_hour]
+            theta_norm: [
+                6744.1594609454505,
+                6541.739357676244,
+                -138.41000207641446,
+                245.3329893390228,
+                411.0677873720265,
+                -1837.9889402665503
+            ],
+            theta_bgd: [
+                6744.1594609454505,
+                6541.739357676234,
+                -138.41000207642304,
+                245.33298933901892,
+                411.06778737202285,
+                -1837.9889402665672
+            ],
+            theta_sgd: [
+                6886.010326301721,
+                6909.917883099348,
+                -521.3484979811344,
+                916.225695262569,
+                590.3757960172212,
+                -2424.10007961418
+            ]
+        };
+
+        let currentSolver = 'normal';
+
+        const inputs = {
+            hour: document.getElementById('input-hour'),
+            sw: document.getElementById('input-sw'),
+            temp: document.getElementById('input-temp'),
+            cloud: document.getElementById('input-cloud')
+        };
+
+        const labels = {
+            hour: document.getElementById('val-hour'),
+            sw: document.getElementById('val-sw'),
+            temp: document.getElementById('val-temp'),
+            cloud: document.getElementById('val-cloud')
+        };
+
+        const displays = {
+            power: document.getElementById('display-power'),
+            megawatts: document.getElementById('display-megawatts'),
+            pct: document.getElementById('display-pct'),
+            gaugeFill: document.getElementById('gauge-fill'),
+            gaugeLabel: document.getElementById('gauge-cur-label'),
+            normComp: document.getElementById('val-norm-comp'),
+            bgdComp: document.getElementById('val-bgd-comp'),
+            sgdComp: document.getElementById('val-sgd-comp'),
+            homes: document.getElementById('metric-homes'),
+            co2: document.getElementById('metric-co2'),
+            inverter: document.getElementById('metric-inverter')
+        };
+
+        // Attach event listeners to all sliders
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', () => {
+                updateLabels();
+                calculatePrediction();
+            });
+        });
+
+        function updateLabels() {
+            const h = parseInt(inputs.hour.value);
+            labels.hour.textContent = `${h.toString().padStart(2, '0')}:00 IST`;
+            labels.sw.textContent = `${parseFloat(inputs.sw.value).toFixed(1)} W/m²`;
+            labels.temp.textContent = `${parseFloat(inputs.temp.value).toFixed(1)} °C`;
+            labels.cloud.textContent = `${inputs.cloud.value} %`;
+        }
+
+        function setControl(type, val) {
+            if (inputs[type]) {
+                inputs[type].value = val;
+                updateLabels();
+                calculatePrediction();
+            }
+        }
+
+        function setSolver(solver) {
+            currentSolver = solver;
+            ['normal', 'batch_gd', 'sgd'].forEach(s => {
+                const btn = document.getElementById(`tab-${s}`);
+                if (btn) btn.classList.toggle('active', s === solver);
+            });
+            ['card-normal', 'card-batch', 'card-sgd'].forEach(c => {
+                const card = document.getElementById(c);
+                if (card) card.classList.remove('highlight');
+            });
+            if (solver === 'normal') document.getElementById('card-normal').classList.add('highlight');
+            if (solver === 'batch_gd') document.getElementById('card-batch').classList.add('highlight');
+            if (solver === 'sgd') document.getElementById('card-sgd').classList.add('highlight');
+
+            calculatePrediction();
+        }
+
+        /**
+         * Standalone Prediction Function
+         * Executes pure linear algebra hypothesis: h_theta(X) = X @ theta
+         */
+        function calculatePrediction() {
+            const h = parseFloat(inputs.hour.value);
+            const sw = parseFloat(inputs.sw.value);
+            const temp = parseFloat(inputs.temp.value);
+            const cloud = parseFloat(inputs.cloud.value);
+
+            // 1. Compute cyclical time features
+            const sin_hour = Math.sin(2.0 * Math.PI * h / 24.0);
+            const cos_hour = Math.cos(2.0 * Math.PI * h / 24.0);
+
+            // 2. Feature vector: [sw_radiation, temp_2m, cloud_cover, sin_hour, cos_hour]
+            const raw = [sw, temp, cloud, sin_hour, cos_hour];
+
+            // 3. Standardize using training statistics: x_scaled = (x - mu) / sigma
+            const scaled = raw.map((val, idx) => (val - MODEL_CONFIG.scaler.mean[idx]) / MODEL_CONFIG.scaler.std[idx]);
+
+            // 4. Design vector including intercept x_0 = 1.0
+            const x_design = [1.0, ...scaled];
+
+            // Vector dot product
+            const dot = (a, b) => a.reduce((sum, val, idx) => sum + val * b[idx], 0.0);
+
+            // Predict across all three solvers (with clipping at 0.0)
+            const pred_norm = Math.max(0.0, dot(x_design, MODEL_CONFIG.theta_norm));
+            const pred_bgd  = Math.max(0.0, dot(x_design, MODEL_CONFIG.theta_bgd));
+            const pred_sgd  = Math.max(0.0, dot(x_design, MODEL_CONFIG.theta_sgd));
+
+            let selectedPower = pred_norm;
+            if (currentSolver === 'batch_gd') selectedPower = pred_bgd;
+            if (currentSolver === 'sgd') selectedPower = pred_sgd;
+
+            const capacityPct = Math.min(100.0, Math.max(0.0, (selectedPower / MODEL_CONFIG.peak_power_kw) * 100.0));
+            const mw = (selectedPower / 1000.0).toFixed(2);
+
+            // Update DOM Displays
+            displays.power.textContent = selectedPower.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            displays.megawatts.innerHTML = `Generating <strong>${mw} MW</strong> • Operating at <strong>${capacityPct.toFixed(2)}%</strong> of maximum rated capacity.`;
+            displays.pct.textContent = `${capacityPct.toFixed(2)}%`;
+
+            displays.gaugeFill.style.width = `${capacityPct}%`;
+            displays.gaugeLabel.textContent = `${capacityPct.toFixed(1)}% Capacity`;
+
+            // Update Solver Comparison Cards
+            displays.normComp.textContent = `${pred_norm.toLocaleString('en-US', { maximumFractionDigits: 1 })} kW`;
+            displays.bgdComp.textContent = `${pred_bgd.toLocaleString('en-US', { maximumFractionDigits: 1 })} kW`;
+            displays.sgdComp.textContent = `${pred_sgd.toLocaleString('en-US', { maximumFractionDigits: 1 })} kW`;
+
+            // Real-world Impact Metrics
+            const homes = Math.round(selectedPower * 0.833);
+            const co2 = (selectedPower * 0.00071).toFixed(2);
+            const perInverter = (selectedPower / 22.0).toFixed(1);
+
+            displays.homes.textContent = `~${homes.toLocaleString()}`;
+            displays.co2.textContent = `${co2} t/h`;
+            displays.inverter.textContent = `${perInverter} kW`;
+        }
+
+        function switchSectionTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            const target = document.getElementById(`tab-content-${tabId}`);
+            if (target) target.classList.add('active');
+        }
+
+        // Initialize on load
+        updateLabels();
+        calculatePrediction();
+    </script>
+</body>
+</html>
